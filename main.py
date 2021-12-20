@@ -8,6 +8,7 @@ matplotlib.use('TkAgg')
 from matplotlib import pyplot
 import pandas as pd
 
+#tuning values for Unit 2
 tuning = {    
     "bottom":{
         "T_offset" : 0.5224,
@@ -20,7 +21,6 @@ tuning = {
     }
 }
 
-
 def temp_conversion(T_requested, tuning = tuning["bottom"]):
 
     T_offset = tuning["T_offset"]
@@ -28,9 +28,10 @@ def temp_conversion(T_requested, tuning = tuning["bottom"]):
     T_actual = T_offset  + fudge_factor * ( T_requested )
     return T_actual
  
-#*****SETTINGS*****#
+#*************************************# 
+#**************SETTINGS***************#
 
-#Update yellow values as needed
+#Update values as needed
 
 #Activation Step
 Activation_Temp = 99 #degrees Celcius
@@ -55,9 +56,9 @@ Equilibration_Temp = 15 #degrees Celcius
 Equilibration_RampRate = 4 #degrees/second
 Equilibration_Time = 60 #seconds
 
-port = 'COM5'
-#*******************#
-
+port = 'COM5' #Update
+#*************************************#
+#*************************************#
 
 COMMAND_TABLE = {
     "loop status": [1200, ""],
@@ -158,31 +159,30 @@ class dualTEC:
             self.getdata()
             self.update()
 
+#Holding time is the time required to reach the desired temperature
 
+def holding_time_d():
+    holding_time_d = ((Denaturing_Temp - Annealing_Temp)/Denaturing_RampRate) + 4.0 #4 seconds added as buffer to ensure that the temperature has stabilized.
+    return holding_time_d
 
-
-def holding_time():
-    holding_time = ((Denaturing_Temp - Annealing_Temp)/Denaturing_RampRate) + 4.0 
-    return holding_time
+def holding_time_a():
+    holding_time_a = ((Denaturing_Temp - Annealing_Temp)/Annealing_RampRate) + 4.0 #4 seconds added as buffer to ensure that the temperature has stabilized.
+    return holding_time_a
 
 def PCR(tec):
   
     for cycle in range(Cycle_Repetition): 
-        print( "#set 52")
+        print( "#Annealing")
         tec.setpoint(Annealing_Temp, ramp=Annealing_RampRate)
-        #tec.setpoint(47.5, ramp=4)
-        tec.monitor(holding_time())
+        tec.monitor(holding_time_a())
         tec.setpoint(Annealing_Temp,ramp=1)
         tec.monitor(Annealing_Time)
 
-        print ( "#set 98 ")
+        print ( "#Denaturing")
         tec.setpoint(Denaturing_Temp, ramp=Denaturing_RampRate)
-        #tec.setpoint(85.5, ramp=4)
-        tec.monitor(holding_time())
+        tec.monitor(holding_time_d())
         tec.setpoint(Denaturing_Temp, ramp=1)
         tec.monitor(Denaturing_Time)
-
-
     
 def square_wave(tec):
     for ramp in [4,6,8,10,12,14,16]: 
@@ -210,13 +210,13 @@ def main():
     print ( "#enable")
     tec.enable()
 
-    print ( "#set 99")
+    print ( "#Activation")
     tec.setpoint(Activation_Temp, ramp = Activation_RampRate)
     tec.monitor(Activation_Time)
 
     PCR(tec)
 
-    print ( "#set 20")
+    print ( "#Equilibration")
     tec.setpoint(Equilibration_Temp, ramp = Equilibration_RampRate)
     
     tec.monitor(Equilibration_Time)
@@ -226,14 +226,6 @@ def main():
     tec.monitor(20)
 
     pyplot.savefig ("graph.png")
-    # df = pd.read 
-    # df = df.iloc[:,4:]
-    # global_num = df.sum()
-    # writer = self.ExcelWriter('python_plot.xlsx', engine = 'xlsxwriter')
-    # global_num.to_excel(writer, sheet_name = 'Sheet1')
-    # worksheet = writer.sheets['Sheet1']
-    # worksheet.insert_image('C2','graph.png')
-    # writer.save()
 
 
 if __name__ == "__main__":
