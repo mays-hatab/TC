@@ -3,13 +3,13 @@
 "Unit3":
     {    
         "bottom":{
-            "T_offset" : 0.7018,
-            "fudge_factor" : 0.805,  
+            "T_offset" : 3.8506,
+            "fudge_factor" : 0.821  
         },
 
         "top":{
-            "T_offset" : 3.4925,
-            "fudge_factor" : 0.6984,
+            "T_offset" : 6.7459,
+            "fudge_factor" : 0.6759
         }
     }
 }

@@ -3,20 +3,20 @@
 
 	"temp": 90.0,
 	"ramprate": 4,
-	"activation time": 60
+	"time": 60
 },
-
-"Denaturation":{
+"cycles":40,
+"Denaturing":{
 
 	"temp": 90.0,
 	"ramprate": 10,
-	"activation time": 10
+	"time": 10
 },
 "Annealing":{
 
 	"temp": 50.0,
 	"ramprate": 10,
-	"activation time": 10
+	"time": 10
 
 },
 "Equilibration":{
@@ -24,6 +24,6 @@
 
 	"temp": 15.0,
 	"ramprate": 4,
-	"activation time": 60
+	"time": 60
 }
 }

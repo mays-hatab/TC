@@ -31,33 +31,14 @@ def temp_conversion(T_requested, tuning):
     fudge_factor = tuning["fudge_factor"]
     T_actual = T_offset  + fudge_factor * ( T_requested )
     return T_actual
+
+def inv_conversion(T, tuning):
+
+    T_offset = tuning["T_offset"]
+    fudge_factor = tuning["fudge_factor"]
+    return (T-T_offset)/fudge_factor
+
  
-#*****SETTINGS*****#
-
-#Update yellow values as needed
-
-#Activation Step
-Activation_Temp = 90 #degrees Celcius
-Activation_RampRate = 4 #degrees/second
-Activation_Time = 60 #seconds
-
-#Cycle Definition
-Cycle_Repetition = 10 #times that the cycle will repeat
-
-#Denaturing Step
-Denaturing_Temp = 90 #degrees Celcius
-Denaturing_RampRate = 10 #degrees/second+
-Denaturing_Time = 10 #seconds
-
-#Annealing Step
-Annealing_Temp = 50 #degrees Celcius
-Annealing_RampRate = 10 #degrees/second
-Annealing_Time = 10 #seconds
-
-#Equilibration Step
-Equilibration_Temp = 15 #degrees Celcius
-Equilibration_RampRate = 4 #degrees/second
-Equilibration_Time = 60 #seconds
 
 port = 'COM7'
 #*******************#
@@ -151,11 +132,11 @@ class dualTEC:
         targT1 = [x[4] for x in self.data]
         targT2 = [x[5] for x in self.data]
 
-        objT1 = [(x - Top_T_offset)/Top_Fudge_factor for x in objT1]
-        objT2 = [(x - Bottom_T_offset)/Bottom_Fudge_factor for x in objT2]
+        objT1 = [ inv_conversion(x,cal_values["top"]) for x in objT1]
+        objT2 = [ inv_conversion(x,cal_values["bottom"]) for x in objT2]
 
-        targT1 = [(x - Top_T_offset)/Top_Fudge_factor for x in targT1]
-        targT2 = [(x - Bottom_T_offset)/Bottom_Fudge_factor for x in targT2]
+        targT1 = [ inv_conversion(x,cal_values["top"]) for x in targT1]
+        targT2 = [ inv_conversion(x,cal_values["bottom"]) for x in targT2]
         pyplot.plot(self.T, objT1,label="objT1")
         pyplot.plot(self.T, objT2,label="objT2")
         pyplot.plot(self.T, targT1,label="targT1")
@@ -173,6 +154,31 @@ class dualTEC:
             self.getdata()
             self.update()
 
+#*****SETTINGS*****#
+
+#Update yellow values as needed
+
+#Activation Step
+Activation_Temp = thermal_profile["Annealing"]["temp"]
+Activation_RampRate = thermal_profile["Annealing"]["ramprate"] 
+Activation_Time = thermal_profile["Annealing"]["time"] 
+
+#Cycle Definition
+Cycle_Repetition = thermal_profile["cycles"]
+#Denaturing Step
+Denaturing_Temp = thermal_profile["Denaturing"]["temp"]
+Denaturing_RampRate = thermal_profile["Denaturing"]["ramprate"]
+Denaturing_Time = thermal_profile["Denaturing"]["time"]
+
+#Annealing Step
+Annealing_Temp = thermal_profile["Annealing"]["temp"]
+Annealing_RampRate = thermal_profile["Annealing"]["ramprate"]
+Annealing_Time = thermal_profile["Annealing"]["time"]
+
+#Equilibration Step
+Equilibration_Temp = thermal_profile["Equilibration"]["temp"]
+Equilibration_RampRate = thermal_profile["Equilibration"]["ramprate"]
+Equilibration_Time = thermal_profile["Equilibration"]["time"]
 
 
 
