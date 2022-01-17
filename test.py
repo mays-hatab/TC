@@ -234,6 +234,6 @@ def main():
     # worksheet.insert_image('C2','graph.png')
     # writer.save()
 
-
+# this the main block
 if __name__ == "__main__":
     main()
