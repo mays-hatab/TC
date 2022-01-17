@@ -1,25 +1,40 @@
 from mecom import MeCom
 import logging
 import time
+
 import matplotlib
 import xlsxwriter
 matplotlib.use('TkAgg')
 from matplotlib import pyplot
 import pandas as pd
 
+Bottom_T_offset = 0.7018
+Bottom_Fudge_factor = 0.805
+Top_T_offset = 3.4925
+Top_Fudge_factor = 0.6984
+
+from datetime import datetime
+
+import sys
+
+logfilename = datetime.now().strftime("%Y%b%d_%H%M%S.log")
+print ( logfilename)
+logfile = open(logfilename, 'w')
+
+
 cal_values = {    
     "bottom":{
-        "T_offset" : 0.7018,
-        "fudge_factor" : 0.805,  
+        "T_offset" : Bottom_T_offset,
+        "fudge_factor" : Bottom_Fudge_factor,  
     },
 
     "top":{
-        "T_offset" : 3.4925,
-        "fudge_factor" : 0.6984,
+        "T_offset" : Top_T_offset,
+        "fudge_factor" : Top_Fudge_factor,
     }
 }
 
-    
+
 def temp_conversion(T_requested, tuning):
 
     T_offset = tuning["T_offset"]
@@ -32,21 +47,21 @@ def temp_conversion(T_requested, tuning):
 #Update yellow values as needed
 
 #Activation Step
-Activation_Temp = 99 #degrees Celcius
+Activation_Temp = 90 #degrees Celcius
 Activation_RampRate = 4 #degrees/second
 Activation_Time = 60 #seconds
 
 #Cycle Definition
-Cycle_Repetition = 42 #times that the cycle will repeat
+Cycle_Repetition = 10 #times that the cycle will repeat
 
 #Denaturing Step
-Denaturing_Temp = 98 #degrees Celcius
-Denaturing_RampRate = 4 #degrees/second+
-Denaturing_Time = 6 #seconds
+Denaturing_Temp = 90 #degrees Celcius
+Denaturing_RampRate = 10 #degrees/second+
+Denaturing_Time = 10 #seconds
 
 #Annealing Step
-Annealing_Temp = 60 #degrees Celcius
-Annealing_RampRate = 4 #degrees/second
+Annealing_Temp = 50 #degrees Celcius
+Annealing_RampRate = 10 #degrees/second
 Annealing_Time = 10 #seconds
 
 #Equilibration Step
@@ -54,7 +69,7 @@ Equilibration_Temp = 15 #degrees Celcius
 Equilibration_RampRate = 4 #degrees/second
 Equilibration_Time = 60 #seconds
 
-port = 'COM11'
+port = 'COM7'
 #*******************#
 
 
@@ -81,7 +96,7 @@ class dualTEC:
     def _connect(self):
         self._session = MeCom(port)
         self.address = self._session.identify()
-        print ( self.address)
+        print ( self.address, file = logfile)
 
     def session(self):
         if self._session is None:
@@ -111,7 +126,7 @@ class dualTEC:
         self.set(3000, sp_bottom, [2])
 
         sp_top = temp_conversion(float(T), tuning = cal_values["top"]) 
-        self.set(3003, float(ramp),[1])
+        self.set(3003, float(ramp), [1])
         self.set(3000, sp_top, [1])
 
     # 1200 loop status
@@ -128,11 +143,12 @@ class dualTEC:
         all_params = []
         for param in [1200,1000,1010,1020,1021,1001,1011]:
             ret = self.get( param )
-            print ("{0:5.2f} {1:5.2f} ".format( *ret), end="  ", flush=True)
+            print ("{0:5.2f} {1:5.2f} ".format( *ret), end="  ", flush=True, file=logfile)
             all_params += ret
-        print()
+        print(file=logfile)
         self.data.append( all_params )
         self.T.append(time.time() - self.T0)
+
 
     # 2010 status
     def enable(self): self.set(2010, 1 )
@@ -140,10 +156,20 @@ class dualTEC:
 
     def update(self):
         pyplot.clf()
-        pyplot.plot(self.T, [ x[2] for x in self.data],label="objT1")
-        pyplot.plot(self.T, [ x[3] for x in self.data],label="objT2")
-        pyplot.plot(self.T, [ x[4] for x in self.data],label="targT1")
-        pyplot.plot(self.T, [ x[5] for x in self.data],label="targT2")
+        objT1 = [x[2] for x in self.data]
+        objT2 = [x[3] for x in self. data]
+        targT1 = [x[4] for x in self.data]
+        targT2 = [x[5] for x in self.data]
+
+        objT1 = [(x - Top_T_offset)/Top_Fudge_factor for x in objT1]
+        objT2 = [(x - Bottom_T_offset)/Bottom_Fudge_factor for x in objT2]
+
+        targT1 = [(x - Top_T_offset)/Top_Fudge_factor for x in targT1]
+        targT2 = [(x - Bottom_T_offset)/Bottom_Fudge_factor for x in targT2]
+        pyplot.plot(self.T, objT1,label="objT1")
+        pyplot.plot(self.T, objT2,label="objT2")
+        pyplot.plot(self.T, targT1,label="targT1")
+        pyplot.plot(self.T, targT2,label="targT2")
         pyplot.legend(loc="upper left")
         pyplot.pause(0.1)
 
@@ -167,14 +193,14 @@ def holding_time():
 def PCR(tec):
   
     for cycle in range(Cycle_Repetition): 
-        print( "#set 52")
+        print( "#set 52", file=logfile)
         tec.setpoint(Annealing_Temp, ramp=Annealing_RampRate)
         #tec.setpoint(47.5, ramp=4)
         tec.monitor(holding_time())
         tec.setpoint(Annealing_Temp,ramp=1)
         tec.monitor(Annealing_Time)
 
-        print ( "#set 98 ")
+        print ( "#set 98 ", file = logfile)
         tec.setpoint(Denaturing_Temp, ramp=Denaturing_RampRate)
         #tec.setpoint(85.5, ramp=4)
         tec.monitor(holding_time())
@@ -206,21 +232,21 @@ def main():
 
     tec = dualTEC()
 
-    print ( "#enable")
+    print ( "#enable", file=logfile)
     tec.enable()
 
-    print ( "#set 99")
+    print ( "#set 99", file=logfile)
     tec.setpoint(Activation_Temp, ramp = Activation_RampRate)
     tec.monitor(Activation_Time)
 
     PCR(tec)
 
-    print ( "#set 20")
+    print ( "#set 20", file=logfile)
     tec.setpoint(Equilibration_Temp, ramp = Equilibration_RampRate)
     
     tec.monitor(Equilibration_Time)
 
-    print ( "#disable")
+    print ( "#disable", file=logfile)
     tec.disable()
     tec.monitor(20)
 
@@ -234,6 +260,6 @@ def main():
     # worksheet.insert_image('C2','graph.png')
     # writer.save()
 
-# this the main block
+
 if __name__ == "__main__":
     main()
