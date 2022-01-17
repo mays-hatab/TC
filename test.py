@@ -8,11 +8,6 @@ matplotlib.use('TkAgg')
 from matplotlib import pyplot
 import pandas as pd
 
-Bottom_T_offset = 0.7018
-Bottom_Fudge_factor = 0.805
-Top_T_offset = 3.4925
-Top_Fudge_factor = 0.6984
-
 from datetime import datetime
 
 import sys
@@ -21,19 +16,14 @@ logfilename = datetime.now().strftime("%Y%b%d_%H%M%S.log")
 print ( logfilename)
 logfile = open(logfilename, 'w')
 
+import json
 
-cal_values = {    
-    "bottom":{
-        "T_offset" : Bottom_T_offset,
-        "fudge_factor" : Bottom_Fudge_factor,  
-    },
+with open("config/calibration.json","r") as fp:
+    cal_values = json.load(fp)["Unit3"]
 
-    "top":{
-        "T_offset" : Top_T_offset,
-        "fudge_factor" : Top_Fudge_factor,
-    }
-}
 
+with open("profiles/standard_profile.json","r") as fp:
+    thermal_profile = json.load(fp)
 
 def temp_conversion(T_requested, tuning):
 

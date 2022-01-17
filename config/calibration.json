@@ -1,0 +1,15 @@
+{
+
+"Unit3":
+    {    
+        "bottom":{
+            "T_offset" : 0.7018,
+            "fudge_factor" : 0.805,  
+        },
+
+        "top":{
+            "T_offset" : 3.4925,
+            "fudge_factor" : 0.6984,
+        }
+    }
+}
